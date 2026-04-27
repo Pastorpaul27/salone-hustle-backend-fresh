@@ -129,6 +129,76 @@ Instructions:
   }
 });
 
+app.post("/cover-letter", async (req, res) => {
+  try {
+    const { template, applicantName, jobTitle, companyName, skills, reason } = req.body;
+
+    if (!template || !applicantName || !jobTitle || !companyName || !skills || !reason) {
+      return res.status(400).json({
+        error: "Template, applicant name, job title, company name, skills, and reason are required."
+      });
+    }
+
+    const prompt = `
+Write a professional cover letter for a user in Sierra Leone.
+
+Details:
+- Template style: ${template}
+- Applicant name: ${applicantName}
+- Job title: ${jobTitle}
+- Company or organization: ${companyName}
+- Skills: ${skills}
+- Reason for applying: ${reason}
+
+Instructions:
+- Make the letter human, professional, and clear
+- Match the tone to the selected template
+- Keep it practical and realistic
+- Do not use overly complex grammar
+- Make it sound like a real application letter
+- End with the applicant's name
+`;
+
+    const groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${GROQ_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "llama-3.3-70b-versatile",
+        messages: [
+          {
+            role: "system",
+            content: "You are Salone Hustle AI. Write strong, realistic cover letters for jobs, NGOs, and government roles in a simple professional style."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        temperature: 0.9
+      })
+    });
+
+    const data = await groqResponse.json();
+
+    if (!groqResponse.ok) {
+      return res.status(groqResponse.status).json({
+        error: data.error?.message || "Groq request failed."
+      });
+    }
+
+    const reply = data.choices?.[0]?.message?.content || "No response received.";
+    res.json({ reply });
+
+  } catch (error) {
+    res.status(500).json({
+      error: error.message || "Server error"
+    });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
