@@ -199,6 +199,81 @@ Instructions:
   }
 });
 
+app.post("/interview-practice", async (req, res) => {
+  try {
+    const { jobTitle, userAnswer } = req.body;
+
+    if (!jobTitle || !jobTitle.trim()) {
+      return res.status(400).json({
+        error: "Job title is required."
+      });
+    }
+
+    const prompt = userAnswer && userAnswer.trim()
+      ? `
+A Sierra Leone user is preparing for an interview.
+
+Job title: ${jobTitle}
+User's answer: ${userAnswer}
+
+Instructions:
+- Briefly review the answer
+- Say what is good about it
+- Say what should improve
+- Give a stronger sample answer
+- Keep it practical, encouraging, and easy to understand
+`
+      : `
+A Sierra Leone user is preparing for an interview.
+
+Job title: ${jobTitle}
+
+Instructions:
+- Generate 5 realistic interview questions for this role
+- Add short guidance on how to answer them well
+- Keep it simple, practical, and professional
+`;
+
+    const groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${GROQ_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "llama-3.3-70b-versatile",
+        messages: [
+          {
+            role: "system",
+            content: "You are Salone Hustle AI. Help users prepare for interviews with realistic questions, answer feedback, and practical coaching."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        temperature: 0.9
+      })
+    });
+
+    const data = await groqResponse.json();
+
+    if (!groqResponse.ok) {
+      return res.status(groqResponse.status).json({
+        error: data.error?.message || "Groq request failed."
+      });
+    }
+
+    const reply = data.choices?.[0]?.message?.content || "No response received.";
+    res.json({ reply });
+
+  } catch (error) {
+    res.status(500).json({
+      error: error.message || "Server error"
+    });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
