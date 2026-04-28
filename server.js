@@ -303,9 +303,9 @@ app.post("/cv", async (req, res) => {
     }
 
     const prompt = `
-Write a professional CV for a Sierra Leone user.
+Write a professional CV for a Sierra Leone user in a structured formal style.
 
-Details:
+User details:
 - CV template style: ${template}
 - Full name: ${fullName}
 - Phone: ${phone}
@@ -316,13 +316,36 @@ Details:
 - Work experience: ${experience}
 
 Instructions:
-- Write a clean, realistic CV
-- Match the tone to the selected template
-- Improve wording of skills and experience
-- Add a short professional summary or career objective where appropriate
-- Keep it practical and readable
+- Format the CV in this order:
+
+1. PERSONAL DETAILS
+Include:
+- Full Name
+- Phone
+- Email
+- Address
+
+2. PROFILE / OBJECTIVE
+Write a short professional profile or career objective
+
+3. EDUCATIONAL BACKGROUND
+Present the education clearly with headings
+
+4. CORE SKILLS
+Present the skills in a polished professional way
+
+5. JOB EXPERIENCE
+Present the work experience clearly and professionally
+
+6. REFERENCES
+Write: "Available upon request"
+
+- Make it look formal and realistic
+- Use clear headings in capital letters
+- Keep it plain text, well spaced, and professional
+- Improve the wording of the skills and experience
+- Match the selected template style
 - Do not use overly complex grammar
-- Return the CV in plain text, well structured with headings
 `;
 
     const groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
