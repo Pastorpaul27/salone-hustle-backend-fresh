@@ -274,6 +274,97 @@ Instructions:
   }
 });
 
+app.post("/cv", async (req, res) => {
+  try {
+    const {
+      template,
+      fullName,
+      phone,
+      email,
+      address,
+      education,
+      skills,
+      experience
+    } = req.body;
+
+    if (
+      !template ||
+      !fullName ||
+      !phone ||
+      !email ||
+      !address ||
+      !education ||
+      !skills ||
+      !experience
+    ) {
+      return res.status(400).json({
+        error: "Template, full name, phone, email, address, education, skills, and experience are required."
+      });
+    }
+
+    const prompt = `
+Write a professional CV for a Sierra Leone user.
+
+Details:
+- CV template style: ${template}
+- Full name: ${fullName}
+- Phone: ${phone}
+- Email: ${email}
+- Address: ${address}
+- Education: ${education}
+- Skills: ${skills}
+- Work experience: ${experience}
+
+Instructions:
+- Write a clean, realistic CV
+- Match the tone to the selected template
+- Improve wording of skills and experience
+- Add a short professional summary or career objective where appropriate
+- Keep it practical and readable
+- Do not use overly complex grammar
+- Return the CV in plain text, well structured with headings
+`;
+
+    const groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${GROQ_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "llama-3.3-70b-versatile",
+        messages: [
+          {
+            role: "system",
+            content: "You are Salone Hustle AI. Write strong, practical, realistic CVs for jobs, NGOs, and government applications in a clear professional style."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        temperature: 0.9
+      })
+    });
+
+    const data = await groqResponse.json();
+
+    if (!groqResponse.ok) {
+      return res.status(groqResponse.status).json({
+        error: data.error?.message || "Groq request failed."
+      });
+    }
+
+    const reply = data.choices?.[0]?.message?.content || "No response received.";
+    res.json({ reply });
+
+  } catch (error) {
+    res.status(500).json({
+      error: error.message || "Server error"
+    });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
