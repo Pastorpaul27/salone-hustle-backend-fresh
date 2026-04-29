@@ -407,6 +407,69 @@ Write: "Available upon request"
   }
 });
 
+app.post("/vision-chat", async (req, res) => {
+  try {
+    const { message, imageBase64, mimeType } = req.body;
+
+    if (!message || !message.trim()) {
+      return res.status(400).json({ error: "Message is required." });
+    }
+
+    if (!imageBase64 || !mimeType) {
+      return res.status(400).json({ error: "Image and mime type are required." });
+    }
+
+    const groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${GROQ_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "meta-llama/llama-4-scout-17b-16e-instruct",
+        messages: [
+          {
+            role: "system",
+            content: "You are Salone Hustle AI Vision. Analyze images clearly and helpfully. Identify objects, products, flowers, posters, documents, and scenes. Be practical and easy to understand."
+          },
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: message
+              },
+              {
+                type: "image_url",
+                image_url: {
+                  url: `data:${mimeType};base64,${imageBase64}`
+                }
+              }
+            ]
+          }
+        ],
+        temperature: 0.5
+      })
+    });
+
+    const data = await groqResponse.json();
+
+    if (!groqResponse.ok) {
+      return res.status(groqResponse.status).json({
+        error: data.error?.message || "Groq vision request failed."
+      });
+    }
+
+    const reply = data.choices?.[0]?.message?.content || "No response received.";
+    res.json({ reply });
+
+  } catch (error) {
+    res.status(500).json({
+      error: error.message || "Server error"
+    });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
