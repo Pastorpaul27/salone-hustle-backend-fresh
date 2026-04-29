@@ -17,11 +17,39 @@ app.get("/", (req, res) => {
 
 app.post("/chat", async (req, res) => {
   try {
-    const { message } = req.body;
+    const { message, history } = req.body;
 
     if (!message || !message.trim()) {
       return res.status(400).json({ error: "Message is required." });
     }
+
+    const messages = [
+      {
+        role: "system",
+        content: "You are Salone Hustle AI, a smart and practical assistant for CV writing, cover letters, interviews, business ideas, jobs, and career growth in Sierra Leone. Be clear, helpful, professional, and encouraging."
+      }
+    ];
+
+    if (Array.isArray(history)) {
+      for (const item of history) {
+        if (
+          item &&
+          (item.role === "user" || item.role === "assistant") &&
+          typeof item.content === "string" &&
+          item.content.trim()
+        ) {
+          messages.push({
+            role: item.role,
+            content: item.content
+          });
+        }
+      }
+    }
+
+    messages.push({
+      role: "user",
+      content: message
+    });
 
     const groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
@@ -31,17 +59,8 @@ app.post("/chat", async (req, res) => {
       },
       body: JSON.stringify({
         model: "llama-3.3-70b-versatile",
-        messages: [
-          {
-            role: "system",
-            content: "You are Salone Hustle AI. Help with CVs, cover letters, interviews, business ideas, jobs, and skills in a simple practical way for Sierra Leone users."
-          },
-          {
-            role: "user",
-            content: message
-          }
-        ],
-        temperature: 0.7
+        messages,
+        temperature: 0.8
       })
     });
 
